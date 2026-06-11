@@ -109,8 +109,14 @@ New-Item -ItemType Directory -Force (Split-Path $PROFILE) | Out-Null
 
 if (Test-Path $PROFILE) {
     $current = Get-Content $PROFILE -Raw -ErrorAction SilentlyContinue
-    if ($current -match "oh-my-posh") {
-        Write-Skip "Profile (oh-my-posh already configured)"
+    $correctConfig = "$env:USERPROFILE\Documents\PowerShell\themes\gruvbox.omp.json"
+    if ($current -match [regex]::Escape($correctConfig)) {
+        Write-Skip "Profile (oh-my-posh already configured with correct path)"
+    } elseif ($current -match "oh-my-posh") {
+        # Profile has oh-my-posh but with a wrong/old config path — fix it
+        $updated = $current -replace 'oh-my-posh init pwsh --config "[^"]*"', "oh-my-posh init pwsh --config `"$correctConfig`""
+        Set-Content $PROFILE $updated -Encoding UTF8
+        Write-OK "Updated oh-my-posh config path in existing profile"
     } else {
         # Append to an existing profile that has other customisations
         Add-Content $PROFILE "`n$profileContent"
